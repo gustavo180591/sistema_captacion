@@ -1,58 +1,35 @@
-version: '3.8'
+version: '3'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: sistema_captacion_app
-    restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      - ./:/var/www/html
+  backend:
+    build: ./backend
     ports:
-      - "8000:80"
+      - "80:80"
+    volumes:
+      - ./backend:/var/www/html
     depends_on:
       - db
-    networks:
-      - app-network
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=sistema_captacion
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
 
   db:
     image: mysql:8.0
-    container_name: sistema_captacion_db
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - "${MYSQL_PORT}:3306"
+      - "3306:3306"
     volumes:
-      - dbdata:/var/lib/mysql
-      - ./sql:/docker-entrypoint-initdb.d
-    networks:
-      - app-network
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: sistema_captacion_pma
-    restart: unless-stopped
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: ${MYSQL_USER}
-      PMA_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  dbdata:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=sistema_captacion
